@@ -1,0 +1,97 @@
+﻿<Window x:Class="JARVIS.JournalSearchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Поиск техники" Height="600" Width="1000"
+        Background="#0F172A" WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="Slate950" Color="#020617"/>
+        <SolidColorBrush x:Key="Slate800" Color="#1E293B"/>
+        <SolidColorBrush x:Key="Slate400" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Slate200" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="Blue500" Color="#3B82F6"/>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource Slate950}"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Slate800}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="CaretBrush" Value="White"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource Slate950}"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Slate800}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="{StaticResource Slate950}"/>
+            <Setter Property="AlternatingRowBackground" Value="#0A1120"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Slate800}"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource Slate800}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blue500}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource Blue500}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== Поиск ===== -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="TbSearch" Grid.Column="0" Margin="0,0,8,0"
+                     KeyDown="TbSearch_KeyDown"/>
+            <Button Grid.Column="1" Content="Найти" Click="Search_Click"
+                    Background="{StaticResource Blue500}" Foreground="White"
+                    FontWeight="SemiBold" Padding="16,0" BorderThickness="0" Cursor="Hand"/>
+        </Grid>
+
+        <TextBlock x:Name="TbStatus" Grid.Row="1" Foreground="{StaticResource Slate400}"
+                   FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"
+                   Text="Введи ИИН, инв. номер, серийный номер или ФИО и нажми &quot;Найти&quot;."/>
+
+        <!-- ===== Результаты ===== -->
+        <DataGrid Grid.Row="2" x:Name="ResultsGrid">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Дата" Binding="{Binding DateTime}" Width="110"/>
+                <DataGridTextColumn Header="Операция" Binding="{Binding OperationType}" Width="90"/>
+                <DataGridTextColumn Header="ФИО" Binding="{Binding EmployeeName}" Width="140"/>
+                <DataGridTextColumn Header="ИИН" Binding="{Binding EmployeeIIN}" Width="100"/>
+                <DataGridTextColumn Header="Кому ФИО" Binding="{Binding ToName}" Width="140"/>
+                <DataGridTextColumn Header="Кому ИИН" Binding="{Binding ToIIN}" Width="100"/>
+                <DataGridTextColumn Header="Устройство" Binding="{Binding DeviceType}" Width="110"/>
+                <DataGridTextColumn Header="Инв. номер" Binding="{Binding Inv}" Width="100"/>
+                <DataGridTextColumn Header="Серийный номер" Binding="{Binding SN}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

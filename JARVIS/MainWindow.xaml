@@ -1,0 +1,478 @@
+﻿<Window x:Class="JARVIS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:JARVIS"
+        mc:Ignorable="d"
+        Title="J.A.R.V.I.S — Ассистент материального учета Helpdesk"
+        Height="720" Width="1100"
+        Background="#0F172A"
+        FontFamily="Segoe UI"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+
+        <!-- ===== Цветовая палитра (аналог slate/blue из Tailwind) ===== -->
+        <SolidColorBrush x:Key="Slate950" Color="#020617"/>
+        <SolidColorBrush x:Key="Slate900" Color="#0F172A"/>
+        <SolidColorBrush x:Key="Slate800" Color="#1E293B"/>
+        <SolidColorBrush x:Key="Slate400" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="Slate200" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="Blue500"  Color="#3B82F6"/>
+        <SolidColorBrush x:Key="Blue400"  Color="#60A5FA"/>
+        <SolidColorBrush x:Key="Emerald500" Color="#10B981"/>
+        <SolidColorBrush x:Key="Rose500" Color="#F43F5E"/>
+        <SolidColorBrush x:Key="Amber500" Color="#F59E0B"/>
+
+        <!-- ===== Переопределяем системные цвета Menu/MenuItem =====
+             WPF рисует выпадающее подменю по системным SystemColors,
+             игнорируя Background/Foreground на самом Menu — поэтому без
+             этого переопределения подменю остаётся белым с чёрным текстом,
+             как бы ты ни красил сам <Menu>. -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.MenuBarBrushKey}" Color="#020617"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#1E293B"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#1E293B"/>
+
+        <!-- ===== Полностью свой стиль MenuItem =====
+             SystemColors-переопределения выше не всегда работают на новых версиях
+             WPF (тема Fluent игнорирует их) — поэтому строим шаблон сами, без
+             зависимости от темы Windows вообще. Работает и для верхних пунктов
+             ("Файл"), и для вложенных, и для пунктов без подменю. -->
+        <Style TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Grid>
+                            <Border x:Name="Bg" Background="Transparent" CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                                                   VerticalAlignment="Center"
+                                                   TextElement.Foreground="{TemplateBinding Foreground}"/>
+                            </Border>
+                            <Popup x:Name="Popup" Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                                <Border Background="{StaticResource Slate800}" BorderBrush="#334155"
+                                        BorderThickness="1" CornerRadius="6" Padding="4">
+                                    <StackPanel IsItemsHost="True"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{StaticResource Blue500}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== Заголовок секции ("1. Тип операции" и т.п.) ===== -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Blue400}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+
+        <!-- ===== Подпись поля ввода (label) ===== -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <!-- ===== Панель-карточка (тёмный блок с рамкой) ===== -->
+        <Style x:Key="Panel" TargetType="Border">
+            <Setter Property="Background" Value="#260F172A"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Slate800}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <!-- ===== Стиль текстового поля ввода ===== -->
+        <Style x:Key="DarkTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource Slate950}"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate200}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Slate800}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource Blue500}"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ===== RadioButton "как в HTML" — выглядит как переключаемая кнопка-плашка ===== -->
+        <!-- AccentBrush передаётся через Tag, чтобы одна и та же ControlTemplate
+             красила разные группы (синий/зелёный/красный) в свой цвет при выборе -->
+        <Style x:Key="PillRadioButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+            <Setter Property="Padding" Value="8,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Border"
+                                Background="#4D0F172A"
+                                BorderBrush="{StaticResource Slate800}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       FontWeight="Medium"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <Setter Property="Foreground" Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== Основная синяя кнопка ("Сгенерировать и скопировать") ===== -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Blue500}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource Blue400}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== Маленькая кнопка "Добавить" ===== -->
+        <Style x:Key="AddButton" TargetType="Button">
+            <Setter Property="Background" Value="#403B82F6"/>
+            <Setter Property="Foreground" Value="{StaticResource Blue400}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== Кнопка удаления устройства (крестик) ===== -->
+        <Style x:Key="DeleteButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Slate400}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Rose500}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===================== ВЕРХНЕЕ МЕНЮ ===================== -->
+        <Menu Grid.Row="0" Background="{StaticResource Slate950}" Foreground="{StaticResource Slate200}">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Изменить место сохранения журнала..." Click="ChangeJournalPath_Click"/>
+                <MenuItem Header="Открыть папку с журналом" Click="OpenJournalFolder_Click"/>
+                <Separator/>
+                <MenuItem Header="Изменить папку для актов..." Click="ChangeActsFolder_Click"/>
+                <Separator/>
+                <MenuItem Header="Изменить папку для бэкапа..." Click="ChangeBackupFolder_Click"/>
+                <MenuItem Header="Сделать бэкап журнала сейчас" Click="BackupNow_Click"/>
+            </MenuItem>
+            <!-- Отдельный пункт без вложенного списка — один клик и сразу открывается окно,
+                 коллегам не нужно догадываться заходить в "Файл" -->
+            <MenuItem Header="Мои данные (инженер)" Click="OpenEngineerSettings_Click"/>
+            <MenuItem Header="Настроить получателей письма" Click="OpenEmailRecipients_Click"/>
+            <MenuItem Header="Сверить по матрице" Click="OpenMatrixCheck_Click"/>
+            <MenuItem Header="Поиск техники" Click="OpenJournalSearch_Click"/>
+            <MenuItem Header="Загрузить матрицу" Click="LoadMatrix_Click"/>
+            <MenuItem Header="Полезная ссылка" Click="OpenUsefulLink_Click"/>
+            <MenuItem Header="Об авторе" Click="OpenAbout_Click"/>
+        </Menu>
+
+        <!-- ===================== ВЕРХНЯЯ ЧАСТЬ: 3 ПАНЕЛИ ===================== -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ПАНЕЛЬ 1: ТИП ОПЕРАЦИИ + ОСНОВАНИЕ -->
+            <Border Grid.Column="0" Style="{StaticResource Panel}">
+                <StackPanel>
+                    <TextBlock Text="1. Тип операции" Style="{StaticResource SectionHeader}"/>
+                    <UniformGrid Columns="4" Margin="0,0,0,16">
+                        <RadioButton x:Name="RbDelivery" GroupName="OperationType" Style="{StaticResource PillRadioButton}"
+                                     Tag="{StaticResource Blue400}" IsChecked="True" Margin="0,0,4,0"
+                                     Checked="OperationType_Changed" Content="Выдача"/>
+                        <RadioButton x:Name="RbReturn" GroupName="OperationType" Style="{StaticResource PillRadioButton}"
+                                     Tag="{StaticResource Emerald500}" Margin="4,0"
+                                     Checked="OperationType_Changed" Content="Сдача"/>
+                        <RadioButton x:Name="RbSeizure" GroupName="OperationType" Style="{StaticResource PillRadioButton}"
+                                     Tag="{StaticResource Rose500}" Margin="4,0"
+                                     Checked="OperationType_Changed" Content="Изъятие"/>
+                        <RadioButton x:Name="RbTransfer" GroupName="OperationType" Style="{StaticResource PillRadioButton}"
+                                     Tag="{StaticResource Amber500}" Margin="4,0,0,0"
+                                     Checked="OperationType_Changed" Content="Перемещение"/>
+                    </UniformGrid>
+
+                    <Rectangle Height="1" Fill="{StaticResource Slate800}" Margin="0,0,0,16"/>
+
+                    <!-- Секция "Основание" скрывается для "Перемещение" — там инженер и матрица/инцидент не участвуют -->
+                    <StackPanel x:Name="BasisSection">
+                        <TextBlock Text="2. Основание" Style="{StaticResource SectionHeader}"/>
+                        <StackPanel Margin="0,0,0,12">
+                            <RadioButton x:Name="RbMatrix" GroupName="BasisType" Foreground="{StaticResource Slate200}"
+                                         Content="В соответствии с матрицей" Margin="0,0,0,8"
+                                         Checked="OnFieldChanged"/>
+                            <RadioButton x:Name="RbIncident" GroupName="BasisType" Foreground="{StaticResource Slate200}"
+                                         Content="В соответствии с инцидентом" IsChecked="True"
+                                         Checked="OnFieldChanged"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Номер инцидента" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TbIncidentNumber" Style="{StaticResource DarkTextBox}"
+                                 Text="3984921" TextChanged="OnFieldChanged"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ПАНЕЛЬ 2: СОТРУДНИК -->
+            <Border Grid.Column="2" Style="{StaticResource Panel}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock x:Name="TbEmployeeSectionHeader" Text="3. Сотрудник" Style="{StaticResource SectionHeader}"/>
+
+                        <TextBlock x:Name="LblUserName" Text="ФИО пользователя" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TbUserName" Style="{StaticResource DarkTextBox}"
+                             Text="Серикбаева Катера" TextChanged="OnFieldChanged" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Должность / Отдел" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TbUserPosition" Style="{StaticResource DarkTextBox}"
+                             Text="Руководитель СП" TextChanged="OnFieldChanged" Margin="0,0,0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" x:Name="LblUserIIN" Text="ИИН сотрудника" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Grid.Column="1" x:Name="TbIinWarning" Text="Должно быть 12 цифр"
+                                   Foreground="{StaticResource Amber500}" FontSize="10" Visibility="Collapsed"/>
+                        </Grid>
+                        <TextBox x:Name="TbUserIIN" Style="{StaticResource DarkTextBox}"
+                             Text="691230400943" MaxLength="12" FontFamily="Consolas"
+                             PreviewTextInput="Iin_PreviewTextInput"
+                             TextChanged="IinTextBox_TextChanged"/>
+
+                        <TextBlock Text="Местоположение" Style="{StaticResource FieldLabel}" Margin="0,12,0,4"/>
+                        <TextBox x:Name="TbLocation" Style="{StaticResource DarkTextBox}"
+                             Text="АЛАШ" TextChanged="OnFieldChanged"/>
+
+                        <!-- Второй блок — получатель при "Перемещение", скрыт для остальных типов операции -->
+                        <StackPanel x:Name="ToPersonPanel" Visibility="Collapsed" Margin="0,16,0,0">
+                            <Rectangle Height="1" Fill="{StaticResource Slate800}" Margin="0,0,0,16"/>
+                            <TextBlock Text="Кому (получатель)" Style="{StaticResource SectionHeader}"
+                                   Foreground="{StaticResource Emerald500}"/>
+
+                            <TextBlock Text="ФИО получателя" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="TbToName" Style="{StaticResource DarkTextBox}"
+                                 TextChanged="OnFieldChanged" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Должность / Отдел" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="TbToPosition" Style="{StaticResource DarkTextBox}"
+                                 TextChanged="OnFieldChanged" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="ИИН получателя" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="TbToIIN" Style="{StaticResource DarkTextBox}"
+                                 MaxLength="12" FontFamily="Consolas"
+                                 PreviewTextInput="Iin_PreviewTextInput"
+                                 TextChanged="IinTextBox_TextChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ПАНЕЛЬ 3: ТЕХНИКА -->
+            <Border Grid.Column="4" Style="{StaticResource Panel}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="4. Оборудование" Style="{StaticResource SectionHeader}" Margin="0"/>
+                        <Button Grid.Column="1" Content="+ Добавить" Style="{StaticResource AddButton}"
+                                Click="AddDeviceRow_Click"/>
+                    </Grid>
+
+                    <ScrollViewer MaxHeight="330" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="DevicesList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource Slate950}" BorderBrush="{StaticResource Slate800}"
+                                            BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <Grid Grid.Row="0" Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Устройство" Foreground="{StaticResource Blue500}"
+                                                           FontSize="10" FontWeight="Bold"/>
+                                                <Button Grid.Column="1" Content="✕" Style="{StaticResource DeleteButton}"
+                                                        Click="DeleteDeviceRow_Click"/>
+                                            </Grid>
+
+                                            <TextBox Grid.Row="1" Style="{StaticResource DarkTextBox}" FontSize="11" Margin="0,0,0,6"
+                                                     Text="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
+                                                     TextChanged="OnFieldChanged" Tag="Тип (например: монитор)"/>
+
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="8"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Инв. номер" Foreground="{StaticResource Slate400}" FontSize="9"/>
+                                                    <TextBox Style="{StaticResource DarkTextBox}" FontFamily="Consolas" FontSize="11"
+                                                             Text="{Binding Inv, UpdateSourceTrigger=PropertyChanged}"
+                                                             TextChanged="OnFieldChanged"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="Серийный номер" Foreground="{StaticResource Slate400}" FontSize="9"/>
+                                                    <TextBox Style="{StaticResource DarkTextBox}" FontFamily="Consolas" FontSize="11"
+                                                             Text="{Binding SN, UpdateSourceTrigger=PropertyChanged}"
+                                                             TextChanged="OnFieldChanged"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===================== НИЖНЯЯ ПАНЕЛЬ: ПРЕДПРОСМОТР ===================== -->
+        <Border Grid.Row="2" Background="{StaticResource Slate950}" BorderBrush="{StaticResource Slate800}"
+                BorderThickness="0,1,0,0" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Предпросмотр итогового текста:" Foreground="{StaticResource Slate400}"
+                           FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                <TextBox x:Name="TbOutput" Style="{StaticResource DarkTextBox}"
+                         Height="120" IsReadOnly="True" TextWrapping="Wrap"
+                         AcceptsReturn="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto"/>
+
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Foreground="{StaticResource Slate400}" FontSize="10" TextWrapping="Wrap"
+                               VerticalAlignment="Center" Margin="0,0,20,0"
+                               Text="* Утилита автоматически скорректирует склонение глаголов («выдан», «сдан», «изъят»), выставит примечание и скопирует текст в буфер обмена."/>
+                    <Button Grid.Column="1" Content="Сгенерировать и скопировать в буфер"
+                            Style="{StaticResource PrimaryButton}" Click="CopyToClipboard_Click" Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" Content="Скачать акт"
+                            Style="{StaticResource PrimaryButton}" Click="GenerateAct_Click" Margin="0,0,10,0"/>
+                    <Button Grid.Column="3" Content="Отправить по почте"
+                            Style="{StaticResource PrimaryButton}" Click="SendEmailWithAct_Click"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ===================== ТОСТ-УВЕДОМЛЕНИЕ ===================== -->
+        <Border x:Name="Toast" Grid.Row="1" Background="#F01E293B" BorderBrush="{StaticResource Emerald500}"
+                BorderThickness="1" CornerRadius="10" Padding="14,10"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20"
+                Opacity="0" RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <TranslateTransform Y="20"/>
+            </Border.RenderTransform>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="✓" Foreground="{StaticResource Emerald500}" FontWeight="Bold"
+                           FontSize="16" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <StackPanel>
+                    <TextBlock Text="Текст скопирован!" Foreground="{StaticResource Slate200}" FontWeight="SemiBold" FontSize="12"/>
+                    <TextBlock Text="Вставьте его в тикет или акт (Ctrl+V)" Foreground="{StaticResource Slate400}" FontSize="10"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
